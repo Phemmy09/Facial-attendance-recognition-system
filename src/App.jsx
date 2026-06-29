@@ -474,11 +474,11 @@ function ScannerTab({ students, classSettings, attendanceLogs, onLogAdded, showT
                 await handleAttendanceRecord(matchedStudent);
               } else {
                 setFeedback({
-                  status: 'error',
+                  status: 'not_enrolled',
                   name: 'Not Registered for Course',
-                  details: `${matchedStudent.name} is not enrolled in ${selectedCourse}.`
+                  details: `${matchedStudent.name} is not enrolled in ${selectedCourse}.`,
+                  student: matchedStudent
                 });
-                triggerCooldown();
               }
             } else {
               setFeedback({
@@ -552,11 +552,11 @@ function ScannerTab({ students, classSettings, attendanceLogs, onLogAdded, showT
               await handleAttendanceRecord(matchedStudent);
             } else {
               setFeedback({
-                status: 'error',
+                status: 'not_enrolled',
                 name: 'Not Registered for Course',
-                details: `${matchedStudent.name} is not enrolled in ${selectedCourse}.`
+                details: `${matchedStudent.name} is not enrolled in ${selectedCourse}.`,
+                student: matchedStudent
               });
-              triggerCooldown();
             }
           } else {
             setFeedback({
@@ -677,6 +677,70 @@ function ScannerTab({ students, classSettings, attendanceLogs, onLogAdded, showT
     }
   };
 
+  const handleEnrollStudentInCourse = async (student) => {
+    if (!student) return;
+    setScanStatus('matching');
+    setFeedback({
+      status: 'loading',
+      name: `Enrolling ${student.name}...`,
+      details: `Adding ${selectedCourse} to registered courses...`
+    });
+
+    try {
+      const currentCourses = student.courses || (student.course ? [student.course] : []);
+      if (!currentCourses.includes(selectedCourse)) {
+        const updatedCourses = [...currentCourses, selectedCourse];
+        await dbService.updateStudentCourses(student.id, updatedCourses);
+        showToast(`${student.name} enrolled in ${selectedCourse}!`, 'success');
+      }
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const nowIso = now.toISOString();
+      const currentTimeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      
+      const settings = classSettings || { start_time: '09:00:00', end_time: '17:00:00', grace_period_mins: 15 };
+
+      const timeToSeconds = (tStr) => {
+        const [h, m, s = 0] = tStr.split(':').map(Number);
+        return h * 3600 + m * 60 + s;
+      };
+
+      const nowSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+      const classStartSeconds = timeToSeconds(settings.start_time);
+      const gracePeriodSeconds = settings.grace_period_mins * 60;
+
+      const isLate = nowSeconds > (classStartSeconds + gracePeriodSeconds);
+      const status = isLate ? 'Late' : 'Present';
+
+      await dbService.addAttendanceLog(student.id, todayStr, nowIso, status, selectedCourse);
+      
+      setFeedback({
+        status: 'success',
+        name: `Welcome, ${student.name}!`,
+        details: `Enrolled & Check-in for ${selectedCourse} recorded. Status: ${status}`
+      });
+      showToast(`Check-in recorded for ${selectedCourse}`, 'success');
+      
+      onLogAdded();
+      triggerCooldown();
+    } catch (err) {
+      console.error(err);
+      setFeedback({
+        status: 'error',
+        name: 'Enrollment Failed',
+        details: `Failed to enroll student in ${selectedCourse}: ${err.message || String(err)}`
+      });
+      showToast('Enrollment failed.', 'error');
+      triggerCooldown();
+    }
+  };
+
+  const handleCancelEnrollment = () => {
+    setFeedback({ status: 'idle', name: '', details: '' });
+    setScanStatus('ready');
+  };
+
   const recentLogs = useMemo(() => {
     return attendanceLogs.slice(0, 5);
   }, [attendanceLogs]);
@@ -709,7 +773,7 @@ function ScannerTab({ students, classSettings, attendanceLogs, onLogAdded, showT
         <div className="glass-card" style={{ padding: '1.5rem' }}>
           <div className={`camera-wrapper ${scanStatus === 'matching' ? 'matching' :
               feedback.status === 'success' ? 'success' :
-                feedback.status === 'error' ? 'error' : ''
+                (feedback.status === 'error' || feedback.status === 'not_enrolled') ? 'error' : ''
             }`}>
             {cameraState === 'loading' && (
               <div className="loading-overlay">
@@ -742,7 +806,7 @@ function ScannerTab({ students, classSettings, attendanceLogs, onLogAdded, showT
                   <div className="scanner-status-tag">
                     <span className={`scanner-indicator ${scanStatus === 'matching' ? 'active' :
                         feedback.status === 'success' ? 'success' :
-                          feedback.status === 'error' ? 'error' : ''
+                          (feedback.status === 'error' || feedback.status === 'not_enrolled') ? 'error' : ''
                       }`}></span>
                     <span>
                       {scanStatus === 'ready' && 'LOOK HERE TO SCAN'}
@@ -808,6 +872,44 @@ function ScannerTab({ students, classSettings, attendanceLogs, onLogAdded, showT
                 </div>
                 <h4 className="feedback-title" style={{ color: 'var(--accent-rose)' }}>{feedback.name}</h4>
                 <p className="feedback-desc" style={{ color: 'var(--text-secondary)' }}>{feedback.details}</p>
+              </>
+            )}
+            {feedback.status === 'not_enrolled' && (
+              <>
+                <div className="feedback-icon-wrapper warning" style={{ background: 'rgba(245, 158, 11, 0.15)', color: 'var(--accent-amber)' }}>
+                  <AlertTriangle size={24} />
+                </div>
+                <h4 className="feedback-title" style={{ color: 'var(--accent-amber)' }}>{feedback.name}</h4>
+                <p className="feedback-desc" style={{ color: '#fff', marginBottom: '1.25rem' }}>{feedback.details}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%' }}>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => handleEnrollStudentInCourse(feedback.student)}
+                    style={{
+                      padding: '0.75rem 1.25rem',
+                      fontSize: '0.95rem',
+                      background: 'linear-gradient(135deg, var(--accent-amber), #d97706)',
+                      boxShadow: '0 4px 15px rgba(245, 158, 11, 0.3)',
+                      width: '100%',
+                      border: 'none'
+                    }}
+                  >
+                    Enroll & Check In
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={handleCancelEnrollment}
+                    style={{
+                      padding: '0.75rem 1.25rem',
+                      fontSize: '0.95rem',
+                      width: '100%'
+                    }}
+                  >
+                    Resume Scanning
+                  </button>
+                </div>
               </>
             )}
           </div>

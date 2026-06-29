@@ -389,6 +389,74 @@
                 font-size: 2.25rem;
             }
         }
+
+        /* Print optimization styles */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+                background-image: none !important;
+                display: block !important;
+            }
+            .sidebar {
+                display: none !important;
+            }
+            .content {
+                padding: 0 !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+            }
+            header {
+                margin-bottom: 2rem !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .glass-card {
+                background: white !important;
+                border: 1px solid #ddd !important;
+                box-shadow: none !important;
+                padding: 1.5rem !important;
+                margin-bottom: 1.5rem !important;
+                page-break-inside: avoid;
+            }
+            h1, h2, h3, h4 {
+                color: black !important;
+                background: none !important;
+                -webkit-text-fill-color: initial !important;
+            }
+            h2 {
+                border-bottom: 2px solid #333 !important;
+            }
+            p, li, td, th {
+                color: #222 !important;
+            }
+            th {
+                background: #f1f5f9 !important;
+                border-bottom: 2px solid #94a3b8 !important;
+            }
+            td {
+                border-bottom: 1px solid #e2e8f0 !important;
+            }
+            pre {
+                background: #f8fafc !important;
+                border: 1px solid #cbd5e1 !important;
+                padding: 1rem !important;
+                page-break-inside: avoid;
+            }
+            code {
+                color: #0f172a !important;
+            }
+            .diagram-container {
+                border: 1px solid #cbd5e1 !important;
+                background: white !important;
+                padding: 1rem !important;
+                page-break-inside: avoid;
+            }
+            ul li::before {
+                color: #4f46e5 !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -421,9 +489,15 @@
     <!-- Main Content Panel -->
     <main class="content">
         <header>
-            <div class="doc-meta">
-                <i data-lucide="file-text"></i>
-                <span>OFFICIAL PRODUCT DOCUMENTATION v1.1.0</span>
+            <div class="doc-meta" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="file-text"></i>
+                    <span>OFFICIAL PRODUCT DOCUMENTATION v1.1.0</span>
+                </div>
+                <button class="btn-primary no-print" onclick="window.print()" style="padding: 0.4rem 1rem; font-size: 0.85rem; border-radius: 8px; display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; background: linear-gradient(135deg, var(--accent-indigo), var(--accent-purple)); border: none; color: white;">
+                    <i data-lucide="printer" style="width: 14px; height: 14px;"></i>
+                    Print / Save PDF
+                </button>
             </div>
             <h1>Product Requirements Document & Technical Specification</h1>
             <p class="subtitle">Detailed specifications, data models, workflows, and blueprints for the FaceAttend AI Facial Recognition Attendance System.</p>

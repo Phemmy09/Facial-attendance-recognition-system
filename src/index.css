@@ -749,6 +749,11 @@ h1, h2, h3, h4, h5, h6 {
   border-color: var(--accent-indigo);
 }
 
+.filter-control option {
+  background-color: var(--bg-surface-solid);
+  color: var(--text-primary);
+}
+
 /* Tables */
 .table-responsive {
   width: 100%;

@@ -17,13 +17,14 @@ CREATE TABLE public.class_settings (
     start_time time without time zone DEFAULT '09:00:00'::time,
     end_time time without time zone DEFAULT '17:00:00'::time,
     grace_period_mins integer DEFAULT 15,
+    courses text[] NOT NULL DEFAULT '{"General"}'::text[],
     updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
     CONSTRAINT single_row CHECK (id = 1)
 );
 
 -- Initialize default configurations
-INSERT INTO public.class_settings (id, start_time, end_time, grace_period_mins)
-VALUES (1, '09:00:00', '17:00:00', 15)
+INSERT INTO public.class_settings (id, start_time, end_time, grace_period_mins, courses)
+VALUES (1, '09:00:00', '17:00:00', 15, '{"General"}')
 ON CONFLICT (id) DO NOTHING;
 
 -- 2. Create the students table (holds names and 128-dimensional facial descriptors)

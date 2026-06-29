@@ -782,9 +782,12 @@ function ScannerTab({ students, classSettings, attendanceLogs, onLogAdded, showT
               </div>
             )}
             {cameraState === 'error' && (
-              <div className="loading-overlay" style={{ background: '#180a0c' }}>
-                <AlertTriangle size={48} style={{ color: 'var(--accent-rose)' }} />
-                <p style={{ color: 'var(--accent-rose)', fontWeight: 700 }}>Webcam Connection Blocked</p>
+              <div className="loading-overlay" style={{ background: '#180a0c', padding: '1.5rem', textAlign: 'center' }}>
+                <AlertTriangle size={48} style={{ color: 'var(--accent-rose)', marginBottom: '0.5rem' }} />
+                <p style={{ color: 'var(--accent-rose)', fontWeight: 700, marginBottom: '0.5rem' }}>Webcam Connection Blocked</p>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem', maxWidth: '300px' }}>
+                  Please click the lock/camera icon in your browser's address bar, set **Camera** to **Allow**, and make sure no other apps are using it.
+                </p>
                 <button className="btn-primary" onClick={startCamera}>Retry Camera Connection</button>
               </div>
             )}

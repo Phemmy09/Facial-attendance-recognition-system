@@ -749,6 +749,12 @@ h1, h2, h3, h4, h5, h6 {
   border-color: var(--accent-indigo);
 }
 
+/* Fix dropdown option visibility in dark mode */
+.filter-control option, select option {
+  background-color: var(--bg-surface-solid);
+  color: var(--text-primary);
+}
+
 /* Tables */
 .table-responsive {
   width: 100%;

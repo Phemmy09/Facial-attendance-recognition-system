@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FaceAttend AI - Product Requirements Document & Technical Spec</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Mermaid JS for diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.2.4/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                background: '#12141d',
+                primaryColor: '#6366f1',
+                primaryTextColor: '#f8fafc',
+                lineColor: '#38bdf8',
+                secondaryColor: '#8b5cf6'
+            }
+        });
+    </script>
+    
+    <style>
+        :root {
+            /* Colors */
+            --bg-dark: #090a0f;
+            --bg-surface: rgba(18, 20, 29, 0.6);
+            --bg-surface-solid: #12141d;
+            --bg-card: rgba(25, 28, 41, 0.4);
+            --bg-card-hover: rgba(35, 39, 56, 0.6);
+            
+            --accent-indigo: #6366f1;
+            --accent-purple: #8b5cf6;
+            --accent-emerald: #10b981;
+            --accent-rose: #f43f5e;
+            --accent-amber: #f59e0b;
+            --accent-cyan: #06b6d4;
+            
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            
+            --border-light: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(99, 102, 241, 0.2);
+            
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
+            --glass-filter: blur(16px) saturate(180%);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.1) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 320px;
+            background: rgba(10, 11, 18, 0.8);
+            backdrop-filter: var(--glass-filter);
+            border-right: 1px solid var(--border-light);
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            padding: 2.5rem 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-family: var(--font-heading);
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--text-primary) 30%, var(--accent-indigo));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-icon {
+            color: var(--accent-indigo);
+            filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.6));
+        }
+
+        .sidebar-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            list-style: none;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .menu-header {
+            font-family: var(--font-heading);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin: 1.5rem 0 0.5rem;
+        }
+
+        .menu-item a {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+        }
+
+        .menu-item a:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.04);
+            transform: translateX(4px);
+        }
+
+        .menu-item.active a {
+            color: var(--text-primary);
+            background: rgba(99, 102, 241, 0.12);
+            border-color: rgba(99, 102, 241, 0.25);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
+        }
+
+        /* Content Area */
+        .content {
+            flex-grow: 1;
+            padding: 4rem 5%;
+            max-width: 1100px;
+            overflow-y: auto;
+        }
+
+        header {
+            margin-bottom: 4rem;
+            position: relative;
+        }
+
+        .doc-meta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(99, 102, 241, 0.12);
+            color: var(--accent-indigo);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            padding: 0.35rem 0.75rem;
+            border-radius: 100px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-family: var(--font-heading);
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1.15;
+            background: linear-gradient(135deg, #ffffff 40%, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.25rem;
+            font-weight: 400;
+        }
+
+        /* Sections */
+        section {
+            margin-bottom: 5rem;
+            scroll-margin-top: 5rem;
+        }
+
+        h2 {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 0.75rem;
+        }
+
+        h2 i {
+            color: var(--accent-indigo);
+        }
+
+        h3 {
+            font-family: var(--font-heading);
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: #fff;
+            margin: 2rem 0 1rem;
+        }
+
+        p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            font-size: 1.05rem;
+            line-height: 1.7;
+        }
+
+        /* Glass Cards */
+        .glass-card {
+            background: var(--bg-surface);
+            backdrop-filter: var(--glass-filter);
+            -webkit-backdrop-filter: var(--glass-filter);
+            border: 1px solid var(--border-light);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            background: var(--bg-card-hover);
+        }
+
+        /* Grid */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-light);
+            background: rgba(18, 20, 29, 0.3);
+        }
+
+        th, td {
+            padding: 1.1rem 1.5rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        th {
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-weight: 700;
+            font-family: var(--font-heading);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        /* Code highlight */
+        pre {
+            background: #12141d;
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+
+        code {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.95rem;
+            color: #38bdf8;
+        }
+
+        /* Bullet lists */
+        ul {
+            list-style: none;
+            margin-bottom: 1.5rem;
+        }
+
+        ul li {
+            position: relative;
+            padding-left: 1.75rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+        }
+
+        ul li::before {
+            content: "✦";
+            position: absolute;
+            left: 0;
+            color: var(--accent-indigo);
+            font-weight: bold;
+        }
+
+        /* Diagrams Container */
+        .diagram-container {
+            background: #12141d;
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        .badge-indigo { background: rgba(99, 102, 241, 0.15); color: var(--accent-indigo); border: 1px solid rgba(99, 102, 241, 0.3); }
+        .badge-cyan { background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); border: 1px solid rgba(6, 182, 212, 0.3); }
+        .badge-emerald { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.3); }
+        
+        /* Responsive design */
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                padding: 1.5rem;
+            }
+            .content {
+                padding: 2rem 1.5rem;
+            }
+            h1 {
+                font-size: 2.25rem;
+            }
+        }
+
+        /* Print optimization styles */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+                background-image: none !important;
+                display: block !important;
+            }
+            .sidebar {
+                display: none !important;
+            }
+            .content {
+                padding: 0 !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+            }
+            header {
+                margin-bottom: 2rem !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .glass-card {
+                background: white !important;
+                border: 1px solid #ddd !important;
+                box-shadow: none !important;
+                padding: 1.5rem !important;
+                margin-bottom: 1.5rem !important;
+                page-break-inside: avoid;
+            }
+            h1, h2, h3, h4 {
+                color: black !important;
+                background: none !important;
+                -webkit-text-fill-color: initial !important;
+            }
+            h2 {
+                border-bottom: 2px solid #333 !important;
+            }
+            p, li, td, th {
+                color: #222 !important;
+            }
+            th {
+                background: #f1f5f9 !important;
+                border-bottom: 2px solid #94a3b8 !important;
+            }
+            td {
+                border-bottom: 1px solid #e2e8f0 !important;
+            }
+            pre {
+                background: #f8fafc !important;
+                border: 1px solid #cbd5e1 !important;
+                padding: 1rem !important;
+                page-break-inside: avoid;
+            }
+            code {
+                color: #0f172a !important;
+            }
+            .diagram-container {
+                border: 1px solid #cbd5e1 !important;
+                background: white !important;
+                padding: 1rem !important;
+                page-break-inside: avoid;
+            }
+            ul li::before {
+                color: #4f46e5 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Menu -->
+    <nav class="sidebar">
+        <div class="sidebar-brand">
+            <i data-lucide="camera" class="brand-icon"></i>
+            <span>FaceAttend AI</span>
+        </div>
+        
+        <ul class="sidebar-menu">
+            <li class="menu-header">Overview</li>
+            <li class="menu-item active"><a href="#vision"><i data-lucide="eye"></i>Product Vision</a></li>
+            <li class="menu-item"><a href="#roles"><i data-lucide="users"></i>User Roles</a></li>
+            
+            <li class="menu-header">Requirements</li>
+            <li class="menu-item"><a href="#features"><i data-lucide="layers"></i>Core Features</a></li>
+            <li class="menu-item"><a href="#nonfunctional"><i data-lucide="activity"></i>Non-Functional</a></li>
+            
+            <li class="menu-header">Technical Details</li>
+            <li class="menu-item"><a href="#architecture"><i data-lucide="git-branch"></i>Architecture</a></li>
+            <li class="menu-item"><a href="#schema"><i data-lucide="database"></i>Database Schema</a></li>
+            
+            <li class="menu-header">Roadmap</li>
+            <li class="menu-item"><a href="#roadmap"><i data-lucide="trending-up"></i>Development</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content Panel -->
+    <main class="content">
+        <header>
+            <div class="doc-meta" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="file-text"></i>
+                    <span>OFFICIAL PRODUCT DOCUMENTATION v1.1.0</span>
+                </div>
+                <button class="btn-primary no-print" onclick="window.print()" style="padding: 0.4rem 1rem; font-size: 0.85rem; border-radius: 8px; display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; background: linear-gradient(135deg, var(--accent-indigo), var(--accent-purple)); border: none; color: white;">
+                    <i data-lucide="printer" style="width: 14px; height: 14px;"></i>
+                    Print / Save PDF
+                </button>
+            </div>
+            <h1>Product Requirements Document & Technical Specification</h1>
+            <p class="subtitle">Detailed specifications, data models, workflows, and blueprints for the FaceAttend AI Facial Recognition Attendance System.</p>
+        </header>
+
+        <!-- Product Vision Section -->
+        <section id="vision">
+            <h2><i data-lucide="compass"></i> 1. Executive Summary & Vision</h2>
+            <div class="glass-card">
+                <h3>1.1 Product Vision</h3>
+                <p>FaceAttend AI is a state-of-the-art, web-based, zero-installation facial recognition attendance system. It enables schools, universities, and corporate workspaces to track daily attendance for multiple courses, classes, or sessions using a standard laptop or desktop webcam. By executing neural network detection and feature extraction directly inside the browser, it eliminates the need for expensive, specialized biometric hardware while respecting user privacy.</p>
+            </div>
+            <div class="glass-card">
+                <h3>1.2 Core Value Proposition</h3>
+                <ul>
+                    <li><strong>Frictionless Check-in/Check-out</strong>: Students simply stand in front of a screen to log attendance. No tags, signatures, cards, or barcodes required.</li>
+                    <li><strong>Biometric Integrity</strong>: Eliminates proxy attendance ("buddy punching") by matching unique 128-dimensional face descriptor embeddings.</li>
+                    <li><strong>Seamless Real-Time Synchronization</strong>: Synchronized with a Supabase cloud database, updating administrative logs, registers, and metrics panels instantly.</li>
+                    <li><strong>Offline Resilience</strong>: Automatically transitions into Local Storage fallback mode if internet access or DB services are offline.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- User Roles Section -->
+        <section id="roles">
+            <h2><i data-lucide="shield-check"></i> 2. User Roles & Access Matrix</h2>
+            <p>Access controls are divided into three distinct operational states to accommodate public scanners, self-service enrollment, and security monitoring.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Role</th>
+                        <th>Permissions & Capabilities</th>
+                        <th>User Interface Access</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Scanner Terminal</strong> (Public Desk)</td>
+                        <td>View camera scanner interface, stand in front of camera to check-in/out, and see recent scan tags.</td>
+                        <td>Main page: <code>Scanner</code> Tab</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Student</strong> (Self-Service)</td>
+                        <td>Create profile and capture biometric facial descriptors (requires admin supervision).</td>
+                        <td>Auto-triggered modal when unrecognized face is detected</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Administrator</strong></td>
+                        <td>Configure lecture hours, grace periods, courses array, view and delete registered students, audit full registers, export CSV files.</td>
+                        <td>Unlock restricted tabs: <code>Enroll Student</code>, <code>Dashboard & Reports</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Core Features Section -->
+        <section id="features">
+            <h2><i data-lucide="cpu"></i> 3. Functional Requirements & Features</h2>
+            <div class="grid-2">
+                <div class="glass-card">
+                    <h3>3.1 Live Biometric Scanner</h3>
+                    <p>Captures video frames and executes facial recognition using convolutional neural networks (CNNs).</p>
+                    <ul>
+                        <li>Detects single faces inside the coordinate bounds.</li>
+                        <li>Computes distance matching vectors using a Euclidean distance match score.</li>
+                        <li>Implements a 4-second scanner Lockout Cooldown to prevent double scans.</li>
+                        <li>Manual scan override button for low-light or lagging streams.</li>
+                    </ul>
+                </div>
+                <div class="glass-card">
+                    <h3>3.2 Dual-State Check-In/Check-Out</h3>
+                    <p>Calculates schedule metrics based on configurable lecture settings.</p>
+                    <ul>
+                        <li><strong>Present</strong>: Scan recorded within lecture start time + grace period.</li>
+                        <li><strong>Late</strong>: Scan recorded after grace period.</li>
+                        <li><strong>Early Exit</strong>: Second scan recorded before lecture end time.</li>
+                        <li><strong>Completed</strong>: Second scan recorded at or after lecture end time.</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="glass-card">
+                <h3>3.3 Intelligent Course Registration & Active Enrollment</h3>
+                <p>Ensures students are enrolled in active course sessions. If a recognized student stands in front of the camera but is not registered for the active course session, the system freezes scanning and presents an interactive interface:</p>
+                <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+                    <span class="badge badge-indigo">Enroll & Check In Action</span>
+                    <span class="badge badge-cyan">Resume Scan Action</span>
+                </div>
+                <p style="margin-top: 1rem;">This allows quick enrollment directly from the scanning kiosk, automatically writing the course to the student's profile and checking them in immediately, avoiding manual administrative registry lookup.</p>
+            </div>
+        </section>
+
+        <!-- Non-Functional Requirements Section -->
+        <section id="nonfunctional">
+            <h2><i data-lucide="activity"></i> 4. Non-Functional Requirements</h2>
+            <div class="glass-card">
+                <h3>4.1 Performance & Accuracy</h3>
+                <ul>
+                    <li><strong>Biometric Accuracy</strong>: Minimum face detection SsdMobilenet threshold of <code>0.65</code> and match score limit of <code>0.55</code> to prevent false positives.</li>
+                    <li><strong>Low Network Burden</strong>: Neural network weights (~10MB) are loaded once on startup from a CDN, minimizing network roundtrips.</li>
+                    <li><strong>Biometric Anonymization</strong>: Raw faces/camera feed are processed purely client-side. The database only stores 128-float mathematical vectors, meaning original photos cannot be reconstructed from database leaks.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Technical Architecture Section -->
+        <section id="architecture">
+            <h2><i data-lucide="git-branch"></i> 5. System Architecture & Workflows</h2>
+            <p>The sequence below details the biometric matching and attendance logging workflow:</p>
+            <div class="diagram-container">
+                <div class="mermaid">
+                    sequenceDiagram
+                        autonumber
+                        actor Student
+                        participant Browser as React App (Vite)
+                        participant faceapi as face-api.js (neural net)
+                        participant DB as Database Service
+                        participant Supabase as Supabase Cloud
+
+                        Student->>Browser: Stand in front of Camera
+                        Browser->>faceapi: Feed Frame Descriptor
+                        faceapi-->>Browser: Return 128-float Vector
+                        Browser->>DB: Query matches from students list
+                        alt Match Found & Enrolled in Course
+                            DB->>Supabase: Insert or Update Attendance Log
+                            Supabase-->>Browser: Success payload
+                            Browser-->>Student: Display Welcome & Status
+                        else Match Found & NOT Enrolled in Course
+                            Browser-->>Student: Show "Enroll & Check In" warning option
+                        else Unrecognized Face (And Admin Logged In)
+                            Browser-->>Student: Open Instant Registration form modal
+                        end
+                </div>
+            </div>
+        </section>
+
+        <!-- Database Schema Section -->
+        <section id="schema">
+            <h2><i data-lucide="database"></i> 6. Database Schema Design (PostgreSQL)</h2>
+            <p>The Supabase relational schema consists of three core tables configured with appropriate constraints:</p>
+            
+            <div class="glass-card">
+                <h3>6.1 Class Settings Table</h3>
+                <pre><code>CREATE TABLE public.class_settings (
+    id integer PRIMARY KEY DEFAULT 1,
+    start_time time without time zone DEFAULT '09:00:00'::time,
+    end_time time without time zone DEFAULT '17:00:00'::time,
+    grace_period_mins integer DEFAULT 15,
+    courses text[] NOT NULL DEFAULT '{"General"}'::text[],
+    updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+    CONSTRAINT single_row CHECK (id = 1)
+);</code></pre>
+            </div>
+
+            <div class="glass-card">
+                <h3>6.2 Students Directory Table</h3>
+                <pre><code>CREATE TABLE public.students (
+    id text PRIMARY KEY, -- Registration Number (e.g. STU001)
+    name text NOT NULL,
+    email text NOT NULL,
+    courses text[] NOT NULL DEFAULT '{}', -- Array of registered courses
+    face_descriptor double precision[] NOT NULL, -- 128-float embedding
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now())
+);</code></pre>
+            </div>
+
+            <div class="glass-card">
+                <h3>6.3 Attendance Registers Table</h3>
+                <pre><code>CREATE TABLE public.attendance (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    student_id text REFERENCES public.students(id) ON DELETE CASCADE,
+    date date DEFAULT CURRENT_DATE,
+    check_in timestamp with time zone DEFAULT timezone('utc'::text, now()),
+    check_out timestamp with time zone,
+    status text NOT NULL, -- 'Present', 'Late', 'Early Exit', 'Completed'
+    course text NOT NULL DEFAULT 'General',
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+    CONSTRAINT unique_student_day_course UNIQUE (student_id, date, course)
+);</code></pre>
+            </div>
+        </section>
+
+        <!-- Development Roadmap Section -->
+        <section id="roadmap">
+            <h2><i data-lucide="trending-up"></i> 7. Product Development Roadmap</h2>
+            <div class="glass-card">
+                <ul>
+                    <li><span class="badge badge-emerald">Phase 1: Foundation (Complete)</span>: Basic camera scanner page, initial face detection logic, local storage offline mode setup.</li>
+                    <li><span class="badge badge-emerald">Phase 2: Database & UX (Complete)</span>: Supabase backend sync integration, diagnostic connection testing, live course selector, interactive "Not Enrolled" modal.</li>
+                    <li><span class="badge badge-indigo">Phase 3: Security & Portals (Upcoming)</span>: Supabase Auth integration for Teachers/Admins, multiple camera node sync, visual stats dashboard.</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Dynamic active menu highlighters
+        const sections = document.querySelectorAll('section');
+        const navLi = document.querySelectorAll('.sidebar-menu .menu-item');
+        
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (pageYOffset >= (sectionTop - 150)) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLi.forEach(li => {
+                li.classList.remove('active');
+                if (li.querySelector('a').getAttribute('href').slice(1) === current) {
+                    li.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

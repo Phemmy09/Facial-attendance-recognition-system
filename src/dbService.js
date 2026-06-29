@@ -136,6 +136,34 @@ export const dbService = {
     return payload;
   },
 
+  async updateStudentCourses(studentId, newCourses) {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from('students')
+          .update({ courses: newCourses })
+          .eq('id', studentId)
+          .select();
+
+        if (error) throw error;
+        return data[0];
+      } catch (err) {
+        console.error('Supabase updateStudentCourses error:', err);
+        throw err;
+      }
+    }
+
+    // Local Storage Fallback
+    const students = await this.getStudents();
+    const index = students.findIndex((s) => s.id === studentId);
+    if (index === -1) {
+      throw new Error(`Student with ID ${studentId} not found.`);
+    }
+    students[index].courses = newCourses;
+    localStorage.setItem('attendance_students', JSON.stringify(students));
+    return students[index];
+  },
+
   async deleteStudent(studentId) {
     if (isSupabaseConfigured) {
       try {

@@ -3,6 +3,7 @@ import * as faceapi from '@vladmandic/face-api';
 import { dbService } from './dbService';
 import { isSupabaseConfigured, supabase } from './supabaseClient';
 import {
+  Home,
   Camera,
   UserCheck,
   BarChart2,
@@ -24,11 +25,16 @@ import {
   Unlock,
   LogIn,
   LogOut,
-  Key
+  Key,
+  Play,
+  Square,
+  Pause,
+  Layers,
+  ArrowRight
 } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('scanner'); // 'scanner', 'enroll', 'dashboard'
+  const [activeTab, setActiveTab] = useState('home'); // 'home', 'scanner', 'enroll', 'dashboard'
   const [isAdmin, setIsAdmin] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
   const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -111,7 +117,7 @@ export default function App() {
       await dbService.signOut();
       setIsAdmin(false);
       showToast('Signed out successfully.', 'info');
-      setActiveTab('scanner');
+      setActiveTab('home');
     } catch (err) {
       console.error('Error signing out:', err);
       showToast('Error during sign out.', 'error');
@@ -129,11 +135,18 @@ export default function App() {
       </div>
 
       <nav className="navbar">
-        <div className="nav-brand">
+        <div className="nav-brand" onClick={() => setActiveTab('home')} style={{ cursor: 'pointer' }}>
           <Camera className="nav-logo-icon" size={28} />
           <span>FaceAttend AI</span>
         </div>
         <div className="nav-links">
+          <button
+            className={`nav-btn ${activeTab === 'home' ? 'active' : ''}`}
+            onClick={() => setActiveTab('home')}
+          >
+            <Home size={18} />
+            Home
+          </button>
           <button
             className={`nav-btn ${activeTab === 'scanner' ? 'active' : ''}`}
             onClick={() => setActiveTab('scanner')}
@@ -205,6 +218,9 @@ export default function App() {
 
         {modelsLoaded && (
           <>
+            {activeTab === 'home' && (
+              <HomeTab setActiveTab={setActiveTab} isAdmin={isAdmin} />
+            )}
             {activeTab === 'scanner' && (
               <ScannerTab 
                 students={students} 
@@ -255,7 +271,8 @@ function ScannerTab({ students, classSettings, attendanceLogs, onLogAdded, showT
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
-  const [cameraState, setCameraState] = useState('loading'); // 'loading', 'active', 'error'
+  const [cameraState, setCameraState] = useState('loading'); // 'loading', 'active', 'error', 'stopped'
+  const [isScannerActive, setIsScannerActive] = useState(true);
   const [scanStatus, setScanStatus] = useState('initializing'); // 'initializing', 'ready', 'matching', 'cooldown'
   const [feedback, setFeedback] = useState({ status: 'idle', name: '', details: '' }); // 'idle', 'success', 'error', 'loading'
 
@@ -375,7 +392,26 @@ function ScannerTab({ students, classSettings, attendanceLogs, onLogAdded, showT
     }
   }, [students]);
 
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setCameraState('stopped');
+    setIsScannerActive(false);
+  };
+
+  const handleToggleScanner = () => {
+    if (isScannerActive) {
+      stopCamera();
+    } else {
+      setIsScannerActive(true);
+      startCamera();
+    }
+  };
+
   const startCamera = async () => {
+    setIsScannerActive(true);
     setCameraState('loading');
     try {
       if (streamRef.current) {
@@ -438,7 +474,7 @@ function ScannerTab({ students, classSettings, attendanceLogs, onLogAdded, showT
   };
 
   useEffect(() => {
-    if (cameraState !== 'active' || !videoRef.current || scanStatus === 'cooldown' || showInstantEnroll) return;
+    if (!isScannerActive || cameraState !== 'active' || !videoRef.current || scanStatus === 'cooldown' || showInstantEnroll) return;
     let isMounted = true;
     let animationFrameId;
     const processFrame = async () => {
@@ -753,19 +789,41 @@ function ScannerTab({ students, classSettings, attendanceLogs, onLogAdded, showT
           <p className="page-subtitle">Stand in front of the camera to register check-in or exit attendance.</p>
         </div>
 
-        <div className="filter-group" style={{ minWidth: '240px', margin: 0 }}>
-          <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Active Course Session</label>
-          <select
-            className="filter-control"
-            value={selectedCourse}
-            onChange={(e) => setSelectedCourse(e.target.value)}
-            style={{ width: '100%', marginTop: '0.25rem' }}
-          >
-            {uniqueCourses.map(course => (
-              <option key={course} value={course}>{course}</option>
-            ))}
-            {uniqueCourses.length === 0 && <option value="General">General</option>}
-          </select>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="filter-group" style={{ minWidth: '220px', margin: 0 }}>
+            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Active Course Session</label>
+            <select
+              className="filter-control"
+              value={selectedCourse}
+              onChange={(e) => setSelectedCourse(e.target.value)}
+              style={{ width: '100%', marginTop: '0.25rem' }}
+            >
+              {uniqueCourses.map(course => (
+                <option key={course} value={course}>{course}</option>
+              ))}
+              {uniqueCourses.length === 0 && <option value="General">General</option>}
+            </select>
+          </div>
+
+          <div style={{ paddingTop: '1.25rem' }}>
+            <button
+              className={`scanner-toggle-btn ${isScannerActive ? 'btn-stop' : 'btn-start'}`}
+              onClick={handleToggleScanner}
+              title={isScannerActive ? "Stop Camera & Scanner" : "Start Camera & Scanner"}
+            >
+              {isScannerActive ? (
+                <>
+                  <Square size={16} fill="currentColor" />
+                  <span>Stop Scanner</span>
+                </>
+              ) : (
+                <>
+                  <Play size={16} fill="currentColor" />
+                  <span>Start Scanner</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -779,6 +837,32 @@ function ScannerTab({ students, classSettings, attendanceLogs, onLogAdded, showT
               <div className="loading-overlay">
                 <div className="spinner"></div>
                 <p>Initializing hardware camera stream...</p>
+              </div>
+            )}
+            {cameraState === 'stopped' && (
+              <div className="loading-overlay" style={{ background: 'rgba(9, 10, 15, 0.95)', padding: '2rem', textAlign: 'center' }}>
+                <div style={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  background: 'rgba(244, 63, 94, 0.12)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 1rem',
+                  color: 'var(--accent-rose)',
+                  border: '1px solid rgba(244, 63, 94, 0.3)'
+                }}>
+                  <Square size={26} fill="currentColor" />
+                </div>
+                <h3 style={{ fontSize: '1.25rem', color: '#fff', marginBottom: '0.5rem' }}>Scanner Paused</h3>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', maxWidth: '300px' }}>
+                  Webcam hardware and facial recognition are currently turned off.
+                </p>
+                <button className="btn-primary" onClick={startCamera} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Play size={16} fill="currentColor" />
+                  Resume Scanning
+                </button>
               </div>
             )}
             {cameraState === 'error' && (
@@ -1926,3 +2010,149 @@ function AdminLogin({ onLoginSuccess, showToast }) {
     </div>
   );
 }
+
+// ==========================================
+// HOME TAB COMPONENT
+// ==========================================
+function HomeTab({ setActiveTab, isAdmin }) {
+  return (
+    <div className="home-container">
+      {/* Hero Section */}
+      <section className="hero-section">
+        <div className="hero-badge">
+          <Sparkles size={16} className="hero-badge-icon" />
+          <span>AI-POWERED ATTENDANCE SYSTEM</span>
+        </div>
+        <h1 className="hero-title">
+          Smart Facial Attendance <br />
+          <span className="hero-title-gradient">Recognition & Analytics</span>
+        </h1>
+        <p className="hero-subtitle">
+          Eliminate manual roll calls with sub-second facial verification, automated course check-in tracking, real-time analytics, and secure cloud synchronization.
+        </p>
+
+        <div className="hero-actions">
+          <button className="hero-btn hero-btn-primary" onClick={() => setActiveTab('scanner')}>
+            <Camera size={20} />
+            Launch Live Scanner
+            <ArrowRight size={18} />
+          </button>
+          <button className="hero-btn hero-btn-secondary" onClick={() => setActiveTab('enroll')}>
+            <UserPlus size={20} />
+            Enroll Student
+            {!isAdmin && <Lock size={14} style={{ marginLeft: '0.25rem', opacity: 0.7 }} />}
+          </button>
+          <button className="hero-btn hero-btn-outline" onClick={() => setActiveTab('dashboard')}>
+            <BarChart2 size={20} />
+            View Dashboard
+            {!isAdmin && <Lock size={14} style={{ marginLeft: '0.25rem', opacity: 0.7 }} />}
+          </button>
+        </div>
+      </section>
+
+      {/* Feature Showcase Grid */}
+      <section className="features-section">
+        <div className="section-header">
+          <h2 className="section-title">Built for Modern Educational & Corporate Environments</h2>
+          <p className="section-subtitle">Everything you need for seamless, contact-free attendance verification.</p>
+        </div>
+
+        <div className="features-grid">
+          <div className="feature-card glass-card">
+            <div className="feature-icon-wrapper indigo">
+              <Camera size={26} />
+            </div>
+            <h3>Real-Time AI Scanner</h3>
+            <p>High-precision 128-dimensional facial embedding matching via MobileNetV1 & 68 landmark detection directly in your browser.</p>
+          </div>
+
+          <div className="feature-card glass-card">
+            <div className="feature-icon-wrapper emerald">
+              <Layers size={26} />
+            </div>
+            <h3>Multi-Course Sessions</h3>
+            <p>Select active course sessions on-the-fly (e.g., General, CS101, Math). Attendance logs automatically filter by session.</p>
+          </div>
+
+          <div className="feature-card glass-card">
+            <div className="feature-icon-wrapper purple">
+              <Lock size={26} />
+            </div>
+            <h3>Admin Security Control</h3>
+            <p>Role-based access control protects student face data, enrollment portals, and system configuration settings behind admin auth.</p>
+          </div>
+
+          <div className="feature-card glass-card">
+            <div className="feature-icon-wrapper amber">
+              <UserCheck size={26} />
+            </div>
+            <h3>Instant On-the-Fly Enrollment</h3>
+            <p>Detect an unregistered face? Admins can immediately enroll students with 1-click capture straight from the live scanner.</p>
+          </div>
+
+          <div className="feature-card glass-card">
+            <div className="feature-icon-wrapper rose">
+              <BarChart2 size={26} />
+            </div>
+            <h3>Analytics & CSV Export</h3>
+            <p>Track present students, late arrivals, and early exits with real-time charts and export full logs to CSV with a single click.</p>
+          </div>
+
+          <div className="feature-card glass-card">
+            <div className="feature-icon-wrapper cyan">
+              <Database size={26} />
+            </div>
+            <h3>Cloud Sync & Offline Mode</h3>
+            <p>Seamlessly synchronizes with Supabase cloud database with zero-latency fallback to browser LocalStorage when offline.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="how-it-works-section">
+        <div className="section-header">
+          <h2 className="section-title">How It Works in 3 Simple Steps</h2>
+        </div>
+
+        <div className="steps-grid">
+          <div className="step-card glass-card">
+            <div className="step-number">01</div>
+            <h4>Select Course Session</h4>
+            <p>Choose your current active class or lecture from the course dropdown on the scanner page.</p>
+          </div>
+
+          <div className="step-card glass-card">
+            <div className="step-number">02</div>
+            <h4>Stand in Camera View</h4>
+            <p>Position your face in front of the scanner box. AI neural networks detect features in real-time.</p>
+          </div>
+
+          <div className="step-card glass-card">
+            <div className="step-number">03</div>
+            <h4>Automatic Attendance Log</h4>
+            <p>The system verifies your identity, timestamps check-in/checkout status (Present/Late), and logs record instantly.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer Banner */}
+      <div className="glass-card cta-banner" style={{ marginTop: '3rem', padding: '2.5rem', textAlign: 'center', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15))' }}>
+        <h3 style={{ fontSize: '1.6rem', marginBottom: '0.75rem' }}>Ready to start marking attendance?</h3>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Launch the scanner or log in as administrator to enroll new students.</p>
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button className="btn-primary" onClick={() => setActiveTab('scanner')}>
+            <Camera size={18} />
+            Start Attendance Scanner
+          </button>
+          {!isAdmin && (
+            <button className="btn-secondary" onClick={() => setActiveTab('enroll')}>
+              <Lock size={16} />
+              Admin Sign In
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
